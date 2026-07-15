@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"link-shortener/internal/config"
+	"link-shortener/internal/middleware"
+	"link-shortener/internal/router"
 	"log"
 	"net/http"
 	"os"
@@ -18,10 +20,10 @@ type App struct {
 
 func New() *App {
 	cfg := config.Load()
-	mux := http.NewServeMux()
+	mux := router.New()
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: middleware.Logging(mux),
 	}
 	return &App{cfg: cfg, server: server}
 }
@@ -38,7 +40,7 @@ func (app *App) Run() error {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
-	log.Println("Stopping server...")
+	log.Println("Stopping server gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return app.server.Shutdown(ctx)
