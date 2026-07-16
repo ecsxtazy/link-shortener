@@ -46,7 +46,7 @@ func New() (*App, error) {
 	default:
 		return nil, fmt.Errorf("unknown storage: %s", cfg.Storage)
 	}
-	service := service.New(repo)
+	service := service.New(repo, service.RandomGenerator{})
 	handler := handler.New(service)
 	mux := router.New(handler)
 	server := &http.Server{

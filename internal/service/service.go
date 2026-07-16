@@ -19,9 +19,10 @@ type Service struct {
 	generator Generator
 }
 
-func New(repo repository.Repository) *Service {
+func New(repo repository.Repository, generator Generator) *Service {
 	return &Service{
-		repo: repo,
+		repo:      repo,
+		generator: generator,
 	}
 }
 
@@ -42,7 +43,7 @@ func (s *Service) Shorten(ctx context.Context, originalURL string) (string, erro
 		return "", err
 	}
 	for i := 0; i < maxGenerateAttempts; i++ {
-		code, err := Generate()
+		code, err := s.generator.Generate()
 		if err != nil {
 			return "", err
 		}

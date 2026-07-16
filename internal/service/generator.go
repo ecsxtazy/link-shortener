@@ -14,7 +14,9 @@ type Generator interface {
 	Generate() (string, error)
 }
 
-func Generate() (string, error) {
+type RandomGenerator struct{}
+
+func (RandomGenerator) Generate() (string, error) {
 	code := make([]byte, length)
 	for i := range code {
 		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
