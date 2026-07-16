@@ -31,7 +31,7 @@ func (r *MemoryRepository) Create(ctx context.Context, link model.Link) error {
 	return nil
 }
 
-func (r *MemoryRepository) GetbyShort(ctx context.Context, short string) (model.Link, error) {
+func (r *MemoryRepository) GetByShort(ctx context.Context, short string) (model.Link, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	link, ok := r.shortToLink[short]
@@ -50,3 +50,5 @@ func (r *MemoryRepository) GetByOriginal(ctx context.Context, url string) (model
 	}
 	return r.shortToLink[short], nil
 }
+
+func (r *MemoryRepository) Close() {}

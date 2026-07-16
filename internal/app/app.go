@@ -2,8 +2,12 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"link-shortener/internal/config"
 	"link-shortener/internal/middleware"
+	"link-shortener/internal/repository"
+	"link-shortener/internal/repository/memory"
+	"link-shortener/internal/repository/postgres"
 	"link-shortener/internal/router"
 	"log"
 	"net/http"
@@ -11,21 +15,41 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	cfg    config.Config
 	server *http.Server
+	repo   repository.Repository
 }
 
-func New() *App {
+func New() (*App, error) {
 	cfg := config.Load()
+	var repo repository.Repository
+	switch cfg.Storage {
+	case "memory":
+		repo = memory.New()
+	case "postgres":
+		pool, err := pgxpool.New(context.Background(), cfg.DBUrl)
+		if err != nil {
+			return nil, err
+		}
+		repo, err = postgres.New(pool)
+		if err != nil {
+			pool.Close()
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown storage: %s", cfg.Storage)
+	}
 	mux := router.New()
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: middleware.Logging(mux),
 	}
-	return &App{cfg: cfg, server: server}
+	return &App{cfg: cfg, server: server, repo: repo}, nil
 }
 
 func (app *App) Run() error {
@@ -43,5 +67,6 @@ func (app *App) Run() error {
 	log.Println("Stopping server gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	defer app.repo.Close()
 	return app.server.Shutdown(ctx)
 }

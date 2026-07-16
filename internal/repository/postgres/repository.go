@@ -15,10 +15,20 @@ type PostgresRepository struct {
 	pool *pgxpool.Pool
 }
 
-func New(pool *pgxpool.Pool) *PostgresRepository {
-	return &PostgresRepository{
+func New(pool *pgxpool.Pool) (*PostgresRepository, error) {
+	r := &PostgresRepository{
 		pool: pool,
 	}
+	if err := r.init(context.Background()); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *PostgresRepository) init(ctx context.Context) error {
+	query := `CREATE TABLE IF NOT EXISTS links (short_code CHAR(10) PRIMARY KEY,original_url TEXT UNIQUE NOT NULL);`
+	_, err := r.pool.Exec(ctx, query)
+	return err
 }
 
 func (r *PostgresRepository) Create(ctx context.Context, link model.Link) error {
@@ -58,4 +68,8 @@ func (r *PostgresRepository) GetByOriginal(ctx context.Context, url string) (mod
 		return model.Link{}, err
 	}
 	return link, nil
+}
+
+func (r *PostgresRepository) Close() {
+	r.pool.Close()
 }
