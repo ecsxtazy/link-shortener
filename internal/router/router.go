@@ -1,17 +1,17 @@
 package router
 
 import (
-	"encoding/json"
+	"link-shortener/internal/handler"
 	"net/http"
 )
 
-func New() *http.ServeMux {
+func New(handler *handler.Handler) *http.ServeMux {
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
+
+	mux.HandleFunc("POST /shorten", handler.Shorten)
+
+	mux.HandleFunc("GET /{code}", handler.Resolve)
 
 	return mux
 }

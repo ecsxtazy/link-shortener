@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"link-shortener/internal/config"
+	"link-shortener/internal/handler"
 	"link-shortener/internal/middleware"
 	"link-shortener/internal/repository"
 	"link-shortener/internal/repository/memory"
 	"link-shortener/internal/repository/postgres"
 	"link-shortener/internal/router"
+	"link-shortener/internal/service"
 	"log"
 	"net/http"
 	"os"
@@ -44,7 +46,9 @@ func New() (*App, error) {
 	default:
 		return nil, fmt.Errorf("unknown storage: %s", cfg.Storage)
 	}
-	mux := router.New()
+	service := service.New(repo)
+	handler := handler.New(service)
+	mux := router.New(handler)
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: middleware.Logging(mux),
@@ -67,6 +71,9 @@ func (app *App) Run() error {
 	log.Println("Stopping server gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	defer app.repo.Close()
-	return app.server.Shutdown(ctx)
+	if err := app.server.Shutdown(ctx); err != nil {
+		return err
+	}
+	app.repo.Close()
+	return nil
 }

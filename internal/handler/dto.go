@@ -5,5 +5,9 @@ type ShortenRequest struct {
 }
 
 type ShortenResponse struct {
-	Short string `json:"short"`
+	ShortURL string `json:"short_url"`
+}
+
+type ResolveResponse struct {
+	URL string `json:"url"`
 }

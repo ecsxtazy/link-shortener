@@ -38,7 +38,13 @@ func (r *PostgresRepository) Create(ctx context.Context, link model.Link) error 
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "23505":
-			return repository.ErrAlreadyExists
+			if pgErr.ConstraintName == "links_pkey" {
+				return repository.ErrShortCodeExists
+			}
+
+			if pgErr.ConstraintName == "links_original_url_key" {
+				return repository.ErrOriginalURLExists
+			}
 		}
 	}
 	return err
