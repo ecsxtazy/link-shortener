@@ -11,3 +11,7 @@ type ShortenResponse struct {
 type ResolveResponse struct {
 	URL string `json:"url"`
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}

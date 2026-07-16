@@ -20,12 +20,29 @@ func New(service service.Shortener) *Handler {
 func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 	var req ShortenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Error: "invalid request body",
+		})
 		return
 	}
 	short, err := h.service.Shorten(r.Context(), req.URL)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Error: "internal server error",
+		})
+		return
+	}
+	if req.URL == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Error: "invalid request body",
+		})
 		return
 	}
 	resp := ShortenResponse{
@@ -40,11 +57,20 @@ func (h *Handler) Resolve(w http.ResponseWriter, r *http.Request) {
 	url, err := h.service.Resolve(r.Context(), code)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "link not found"})
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+
+			json.NewEncoder(w).Encode(ErrorResponse{
+				Error: "internal server error",
+			})
+			return
+		}
 	}
 	resp := ResolveResponse{
 		URL: url,

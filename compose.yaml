@@ -20,7 +20,7 @@ services:
     build: .
     environment:
       PORT: 8080
-      STORAGE: postgres
+      STORAGE: memory
       DB_URL: postgres://link:link@postgres:5432/link?sslmode=disable
 
     ports:
